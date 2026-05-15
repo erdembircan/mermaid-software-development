@@ -1,0 +1,92 @@
+@import "@fontsource-variable/fraunces";
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/600.css";
+@import "@fontsource/geist-sans/700.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-ink: #18181b;
+  --color-muted: #71717a;
+  --color-border: #e4e4e7;
+  --color-accent: #4338ca;
+  --color-accent-hover: #3730a3;
+  --color-accent-wash: #e0e7ff;
+  --color-accent-text: #312e81;
+
+  /* Category colors */
+  --color-cat-flow: #dcfce7;
+  --color-cat-flow-text: #14532d;
+  --color-cat-arch: #dbeafe;
+  --color-cat-arch-text: #1e3a8a;
+  --color-cat-behavior: #fef3c7;
+  --color-cat-behavior-text: #78350f;
+  --color-cat-data: #fce7f3;
+  --color-cat-data-text: #831843;
+  --color-cat-planning: #ede9fe;
+  --color-cat-planning-text: #3b0764;
+
+  /* Typography */
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* Spacing extras */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+  --spacing-88: 22rem;
+  --spacing-128: 32rem;
+}
+
+/* Base typography */
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mermaid SVG containment — prevent Tailwind preflight from breaking SVG layout */
+.mermaid-output svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Stagger animations for card grid */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.4s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
+  }
+}
+
+/* Skeleton pulse */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
