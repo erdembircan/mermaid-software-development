@@ -1,16 +1,40 @@
 import { useSearchParams } from 'react-router-dom'
 import { charts } from '../data/charts'
 import type { Category } from '../lib/categories'
+import type { ChartEntry } from '../data/types'
 import ChartCard from '../components/ChartCard'
 import CategoryFilter from '../components/CategoryFilter'
+import SearchInput, { SEARCH_MIN_LEN } from '../components/SearchInput'
+
+type SearchGroup = { title: string; charts: ChartEntry[] }
+
+function buildSearchGroups(q: string): SearchGroup[] {
+  const tokens = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const map = new Map<string, ChartEntry[]>()
+  for (const chart of charts) {
+    for (const uc of chart.useCases) {
+      const hay = `${uc.title} ${uc.body}`.toLowerCase()
+      if (tokens.every((t) => hay.includes(t))) {
+        const existing = map.get(uc.title) ?? []
+        map.set(uc.title, [...existing, chart])
+      }
+    }
+  }
+  return Array.from(map.entries()).map(([title, charts]) => ({ title, charts }))
+}
 
 export default function HomePage() {
   const [params] = useSearchParams()
   const activeCategory = params.get('category') as Category | null
+  const q = params.get('q') ?? ''
+  const isSearching = q.trim().length >= SEARCH_MIN_LEN
 
   const visible = activeCategory
     ? charts.filter((c) => c.category === activeCategory)
     : charts
+
+  const searchGroups = isSearching ? buildSearchGroups(q) : []
+  const totalMatches = searchGroups.reduce((n, g) => n + g.charts.length, 0)
 
   return (
     <div>
@@ -69,31 +93,71 @@ export default function HomePage() {
 
       {/* Charts section */}
       <section id="charts" className="mx-auto max-w-6xl px-6 py-16">
-        <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2
               className="text-2xl font-bold text-[var(--color-ink)]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              {activeCategory ? `${visible.length} chart${visible.length !== 1 ? 's' : ''}` : `All ${charts.length} diagrams`}
+              {isSearching
+                ? `Matches for "${q.trim()}" (${totalMatches})`
+                : activeCategory
+                  ? `${visible.length} chart${visible.length !== 1 ? 's' : ''}`
+                  : `All ${charts.length} diagrams`}
             </h2>
             <p className="mt-1 text-sm text-[var(--color-muted)]">
-              Click any card to see a rendered example, source code, and use cases.
+              {isSearching
+                ? 'Grouped by matched use case. Click any card to explore.'
+                : 'Click any card to see a rendered example, source code, and use cases.'}
             </p>
           </div>
-          <CategoryFilter />
+
+          <div className="flex flex-wrap items-center gap-3">
+            <SearchInput />
+            {!isSearching && <CategoryFilter />}
+          </div>
         </div>
 
-        {visible.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--color-border)] py-24 text-center">
-            <p className="text-[var(--color-muted)]">No charts in this category.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visible.map((chart, i) => (
-              <ChartCard key={chart.id} chart={chart} index={i} />
-            ))}
-          </div>
+        {/* Search mode */}
+        {isSearching && (
+          searchGroups.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--color-border)] py-24 text-center">
+              <p className="text-[var(--color-muted)]">No use cases match.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-10">
+              {searchGroups.map(({ title, charts: matched }) => (
+                <div key={title}>
+                  <h3
+                    className="mb-5 text-lg font-semibold text-[var(--color-ink)]"
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    {title}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {matched.map((chart, i) => (
+                      <ChartCard key={chart.id} chart={chart} index={i} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Normal mode */}
+        {!isSearching && (
+          visible.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--color-border)] py-24 text-center">
+              <p className="text-[var(--color-muted)]">No charts in this category.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visible.map((chart, i) => (
+                <ChartCard key={chart.id} chart={chart} index={i} />
+              ))}
+            </div>
+          )
         )}
       </section>
     </div>

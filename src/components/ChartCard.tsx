@@ -28,7 +28,7 @@ export default function ChartCard({ chart, index }: Props) {
       aria-label={`${chart.name}: ${chart.tagline}`}
     >
       {/* Mini diagram preview */}
-      <div className="flex min-h-[180px] items-center justify-center overflow-hidden bg-[var(--color-bg)] p-4">
+      <div className="flex h-[200px] items-center justify-center overflow-hidden bg-[var(--color-bg)] p-4">
         <MermaidDiagram
           source={chart.example}
           label={`${chart.name} preview`}

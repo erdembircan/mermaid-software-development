@@ -43,6 +43,14 @@
   --spacing-128: 32rem;
 }
 
+/* Restore cursor:pointer on buttons (removed in Tailwind v4 preflight) */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 /* Base typography */
 html {
   font-family: var(--font-sans);
