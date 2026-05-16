@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { charts } from '../data/charts'
 import type { Category } from '../lib/categories'
+import { CATEGORIES } from '../lib/categories'
 import type { ChartEntry } from '../data/types'
 import ChartCard from '../components/ChartCard'
 import CategoryFilter from '../components/CategoryFilter'
@@ -28,18 +29,44 @@ function scrollToCharts() {
   document.getElementById('charts')?.scrollIntoView({ behavior: 'smooth' })
 }
 
+const CAT_COLOR: Record<string, string> = {
+  flow: '#4ade80',
+  architecture: '#60a5fa',
+  behavior: '#fbbf24',
+  data: '#f472b6',
+  planning: '#a78bfa',
+}
+const CAT_BG: Record<string, string> = {
+  flow: '#dcfce7', architecture: '#dbeafe', behavior: '#fef3c7',
+  data: '#fce7f3', planning: '#ede9fe',
+}
+const CAT_TEXT: Record<string, string> = {
+  flow: '#14532d', architecture: '#1e3a8a', behavior: '#78350f',
+  data: '#831843', planning: '#3b0764',
+}
+
 export default function HomePage() {
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [params] = useSearchParams()
   const activeCategory = params.get('category') as Category | null
-  const isSearching = query.trim().length >= SEARCH_MIN_LEN
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 150)
+    return () => clearTimeout(t)
+  }, [query])
+
+  const isSearching = debouncedQuery.trim().length >= SEARCH_MIN_LEN
+  const searchGroups = isSearching ? buildSearchGroups(debouncedQuery) : []
 
   const visible = activeCategory
     ? charts.filter((c) => c.category === activeCategory)
     : charts
 
-  const searchGroups = isSearching ? buildSearchGroups(query) : []
-  const totalMatches = searchGroups.reduce((n, g) => n + g.charts.length, 0)
+  const flatResults = searchGroups.flatMap(g =>
+    g.charts.map(c => ({ useCaseTitle: g.title, chart: c }))
+  )
 
   return (
     <div>
@@ -104,63 +131,64 @@ export default function HomePage() {
         </div>
 
         {/* Heading + filter row */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex items-baseline justify-between">
           <div>
-            <h2
-              className="text-2xl font-bold text-[var(--color-ink)]"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
+            <h2 className="text-2xl font-bold text-[var(--color-ink)]" style={{ fontFamily: 'var(--font-display)' }}>
               {isSearching
-                ? `"${query.trim()}" — ${totalMatches} match${totalMatches !== 1 ? 'es' : ''}`
-                : activeCategory
-                  ? `${visible.length} chart${visible.length !== 1 ? 's' : ''}`
-                  : `All ${charts.length} diagrams`}
+                ? <><span className="text-[var(--color-muted)] font-normal text-xl" style={{ fontFamily: 'var(--font-mono)' }}>{flatResults.length} results</span></>
+                : activeCategory ? `${visible.length} chart${visible.length !== 1 ? 's' : ''}` : `All ${charts.length} diagrams`}
             </h2>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
-              {isSearching
-                ? 'Matched use cases, grouped by title. Click any card to explore.'
-                : 'Click any card to see a rendered example, source code, and use cases.'}
-            </p>
+            {!isSearching && <p className="mt-1 text-sm text-[var(--color-muted)]">Click any card to see a rendered example, source code, and use cases.</p>}
           </div>
-
           {!isSearching && <CategoryFilter />}
         </div>
 
-        {/* Search results */}
+        {/* Search results — minimal list */}
         {isSearching && (
-          searchGroups.length === 0 ? (
+          flatResults.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--color-border)] py-24 text-center">
               <p className="text-[var(--color-muted)]">No use cases match.</p>
             </div>
           ) : (
-            <div className="divide-y divide-[var(--color-border)]">
-              {searchGroups.map(({ title, charts: matched }) => (
-                <div
-                  key={title}
-                  className="flex flex-col gap-5 py-8 first:pt-0 lg:flex-row lg:items-start lg:gap-10"
-                >
-                  <div className="lg:w-56 lg:shrink-0">
-                    <p
-                      className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--color-accent)]"
-                      style={{ fontFamily: 'var(--font-mono)' }}
+            <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
+              {flatResults.map(({ useCaseTitle, chart }, i) => {
+                const showDivider = i > 0 && flatResults[i - 1].useCaseTitle !== useCaseTitle
+                return (
+                  <div key={`${chart.id}-${useCaseTitle}`}>
+                    {showDivider && <hr className="border-[var(--color-border)]" />}
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/charts/${chart.id}`)}
+                      className="group flex w-full items-center gap-3 pl-0 pr-5 py-3.5 text-left hover:bg-[var(--color-accent-wash)] transition-colors animate-fade-up"
+                      style={{
+                        animationDelay: `${i * 25}ms`,
+                        borderLeft: `3px solid ${CAT_COLOR[chart.category] ?? 'var(--color-border)'}`,
+                        paddingLeft: '1rem',
+                      }}
                     >
-                      Use case
-                    </p>
-                    <h3
-                      className="text-base font-bold leading-snug text-[var(--color-ink)]"
-                      style={{ fontFamily: 'var(--font-display)' }}
-                    >
-                      {title}
-                    </h3>
+                      {/* Use case title */}
+                      <span className="flex-1 text-sm font-semibold text-[var(--color-ink)] truncate">
+                        {useCaseTitle}
+                      </span>
+                      {/* Separator */}
+                      <span className="text-[var(--color-border)] select-none text-xs shrink-0">·</span>
+                      {/* Chart name */}
+                      <span className="text-sm text-[var(--color-muted)] shrink-0 truncate max-w-[140px]">
+                        {chart.name}
+                      </span>
+                      {/* Category badge */}
+                      <span
+                        className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{ backgroundColor: CAT_BG[chart.category], color: CAT_TEXT[chart.category] }}
+                      >
+                        {CATEGORIES[chart.category as keyof typeof CATEGORIES]?.label ?? chart.category}
+                      </span>
+                      {/* Arrow */}
+                      <span className="shrink-0 text-[var(--color-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-sm">→</span>
+                    </button>
                   </div>
-
-                  <div className="flex-1 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {matched.map((chart, i) => (
-                      <ChartCard key={chart.id} chart={chart} index={i} />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )
         )}
