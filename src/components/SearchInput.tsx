@@ -1,38 +1,16 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-
 export const SEARCH_MIN_LEN = 2
 export const SEARCH_MAX_LEN = 50
-export const SEARCH_DEBOUNCE_MS = 150
 
-export default function SearchInput() {
-  const [params, setParams] = useSearchParams()
-  const [value, setValue] = useState(() => params.get('q') ?? '')
+type Props = {
+  value: string
+  onChange: (value: string) => void
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const trimmed = value.trim()
-      setParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          if (trimmed.length >= SEARCH_MIN_LEN) {
-            next.set('q', trimmed)
-            next.delete('category')
-          } else {
-            next.delete('q')
-          }
-          return next
-        },
-        { replace: true }
-      )
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(timer)
-  }, [value, setParams])
-
+export default function SearchInput({ value, onChange }: Props) {
   return (
     <div className="relative flex items-center">
       <svg
-        className="pointer-events-none absolute left-3 h-4 w-4 text-[var(--color-muted)]"
+        className="pointer-events-none absolute left-4 h-4 w-4 shrink-0 text-[var(--color-muted)]"
         viewBox="0 0 20 20"
         fill="none"
         stroke="currentColor"
@@ -42,15 +20,29 @@ export default function SearchInput() {
         <circle cx="9" cy="9" r="6" />
         <path d="m15 15 3 3" strokeLinecap="round" />
       </svg>
+
       <input
-        type="search"
+        type="text"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         maxLength={SEARCH_MAX_LEN}
-        placeholder="Search use cases…"
+        placeholder="Search use cases — try 'deploy' or 'auth flow'…"
         aria-label="Search use cases"
-        className="h-9 w-56 rounded-full border border-[var(--color-border)] bg-white pl-9 pr-4 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] focus:outline-none sm:w-64"
+        className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white pl-11 pr-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
       />
+
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          aria-label="Clear search"
+          className="absolute right-3 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-border)] text-[var(--color-muted)] transition-colors hover:bg-[var(--color-accent)] hover:text-white"
+        >
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M1 1l6 6M7 1L1 7" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }

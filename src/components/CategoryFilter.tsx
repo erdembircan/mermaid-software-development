@@ -13,7 +13,6 @@ export default function CategoryFilter() {
     } else {
       params.set('category', key)
     }
-    params.delete('q')
     setParams(params, { replace: true })
   }
 

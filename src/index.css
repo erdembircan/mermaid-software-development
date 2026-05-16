@@ -60,6 +60,11 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hide native browser clear button on search inputs (we render our own) */
+input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+}
+
 /* Mermaid SVG containment — prevent Tailwind preflight from breaking SVG layout */
 .mermaid-output svg {
   display: block;
