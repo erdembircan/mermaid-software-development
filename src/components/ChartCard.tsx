@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ChartEntry } from '../data/types'
 import { CATEGORIES } from '../lib/categories'
@@ -7,6 +7,7 @@ import MermaidDiagram from './MermaidDiagram'
 type Props = {
   chart: ChartEntry
   index: number
+  hidden?: boolean
 }
 
 const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
@@ -17,15 +18,22 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
   planning: { bg: 'var(--color-cat-planning)', text: 'var(--color-cat-planning-text)' },
 }
 
-export default memo(function ChartCard({ chart, index }: Props) {
+export default memo(function ChartCard({ chart, index, hidden = false }: Props) {
+  const [animated, setAnimated] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimated(true), index * 40 + 500)
+    return () => clearTimeout(timer)
+  }, [index])
+
   const catStyle = CATEGORY_STYLE[chart.category]
   const catLabel = CATEGORIES[chart.category].label
 
   return (
     <Link
       to={`/charts/${chart.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white no-underline transition-all hover:-translate-y-1 hover:border-[var(--color-accent)] hover:shadow-lg animate-fade-up"
-      style={{ animationDelay: `${index * 40}ms` }}
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white no-underline transition-all hover:-translate-y-1 hover:border-[var(--color-accent)] hover:shadow-lg${animated ? '' : ' animate-fade-up'}`}
+      style={{ animationDelay: animated ? undefined : `${index * 40}ms`, display: hidden ? 'none' : undefined }}
       aria-label={`${chart.name}: ${chart.tagline}`}
     >
       {/* Mini diagram preview */}
