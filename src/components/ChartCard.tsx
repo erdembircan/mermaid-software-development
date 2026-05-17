@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ChartEntry } from '../data/types'
 import { CATEGORIES } from '../lib/categories'
@@ -8,6 +8,7 @@ type Props = {
   chart: ChartEntry
   index: number
   hidden?: boolean
+  filterKey: string
 }
 
 const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
@@ -18,22 +19,36 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
   planning: { bg: 'var(--color-cat-planning)', text: 'var(--color-cat-planning-text)' },
 }
 
-export default memo(function ChartCard({ chart, index, hidden = false }: Props) {
-  const [animated, setAnimated] = useState(false)
+export default memo(function ChartCard({ chart, index, hidden = false, filterKey }: Props) {
+  const [initialDelay] = useState(index * 40)
+  const [useStagger, setUseStagger] = useState(true)
+  const linkRef = useRef<HTMLAnchorElement>(null)
+  const prevFilterKey = useRef(filterKey)
 
   useEffect(() => {
-    const timer = setTimeout(() => setAnimated(true), index * 40 + 500)
+    const timer = setTimeout(() => setUseStagger(false), initialDelay + 500)
     return () => clearTimeout(timer)
-  }, [index])
+  }, [initialDelay])
+
+  useEffect(() => {
+    if (prevFilterKey.current !== filterKey && !hidden && linkRef.current) {
+      const el = linkRef.current
+      el.style.display = 'none'
+      void el.offsetWidth
+      el.style.display = ''
+    }
+    prevFilterKey.current = filterKey
+  }, [filterKey, hidden])
 
   const catStyle = CATEGORY_STYLE[chart.category]
   const catLabel = CATEGORIES[chart.category].label
 
   return (
     <Link
+      ref={linkRef}
       to={`/charts/${chart.id}`}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white no-underline transition-all hover:-translate-y-1 hover:border-[var(--color-accent)] hover:shadow-lg${animated ? '' : ' animate-fade-up'}`}
-      style={{ animationDelay: animated ? undefined : `${index * 40}ms`, display: hidden ? 'none' : undefined }}
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white no-underline transition-all hover:-translate-y-1 hover:border-[var(--color-accent)] hover:shadow-lg animate-fade-up"
+      style={{ animationDelay: useStagger ? `${initialDelay}ms` : '0ms', display: hidden ? 'none' : undefined }}
       aria-label={`${chart.name}: ${chart.tagline}`}
     >
       {/* Mini diagram preview */}
