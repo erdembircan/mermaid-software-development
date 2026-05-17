@@ -46,7 +46,7 @@ export default function Footer() {
             </a>
             {' '}— open source, MIT licensed.
           </span>
-          <span>Built by Erdem Bircan</span>
+          <span>© 2026 Erdem Bircan</span>
         </div>
       </div>
     </footer>
