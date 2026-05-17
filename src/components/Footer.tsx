@@ -46,7 +46,17 @@ export default function Footer() {
             </a>
             {' '}— open source, MIT licensed.
           </span>
-          <span>© 2026 Erdem Bircan</span>
+          <span>
+            © 2026{' '}
+            <a
+              href="https://github.com/erdembircan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--color-accent)] transition-colors"
+            >
+              Erdem Bircan
+            </a>
+          </span>
         </div>
       </div>
     </footer>
