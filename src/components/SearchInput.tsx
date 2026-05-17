@@ -1,12 +1,18 @@
+import { forwardRef } from 'react'
+
 export const SEARCH_MIN_LEN = 2
 export const SEARCH_MAX_LEN = 50
 
 type Props = {
   value: string
   onChange: (value: string) => void
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
 }
 
-export default function SearchInput({ value, onChange }: Props) {
+const SearchInput = forwardRef<HTMLInputElement, Props>(function SearchInput(
+  { value, onChange, onKeyDown },
+  ref,
+) {
   return (
     <div className="relative flex items-center">
       <svg
@@ -22,16 +28,18 @@ export default function SearchInput({ value, onChange }: Props) {
       </svg>
 
       <input
+        ref={ref}
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         maxLength={SEARCH_MAX_LEN}
         placeholder="Search use cases — try 'deploy' or 'auth flow'…"
         aria-label="Search use cases"
-        className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white pl-11 pr-10 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
+        className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white pl-11 pr-16 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
       />
 
-      {value && (
+      {value ? (
         <button
           type="button"
           onClick={() => onChange('')}
@@ -42,7 +50,16 @@ export default function SearchInput({ value, onChange }: Props) {
             <path d="M1 1l6 6M7 1L1 7" />
           </svg>
         </button>
+      ) : (
+        <kbd
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3 hidden select-none items-center gap-0.5 rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] text-gray-400 shadow-sm sm:flex"
+        >
+          <span>⌘</span>K
+        </kbd>
       )}
     </div>
   )
-}
+})
+
+export default SearchInput

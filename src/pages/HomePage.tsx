@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { charts } from '../data/charts'
 import type { Category } from '../lib/categories'
@@ -11,12 +11,13 @@ import SearchInput, { SEARCH_MIN_LEN } from '../components/SearchInput'
 type SearchGroup = { title: string; charts: ChartEntry[] }
 
 function buildSearchGroups(q: string): SearchGroup[] {
-  const tokens = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const tokens = q.trim().toLowerCase().split(/\s+/).filter(t => t.length >= SEARCH_MIN_LEN)
+  if (tokens.length === 0) return []
   const map = new Map<string, ChartEntry[]>()
   for (const chart of charts) {
     for (const uc of chart.useCases) {
       const hay = `${uc.title} ${uc.body}`.toLowerCase()
-      if (tokens.every((t) => hay.includes(t))) {
+      if (tokens.some((t) => hay.includes(t))) {
         const existing = map.get(uc.title) ?? []
         map.set(uc.title, [...existing, chart])
       }
@@ -48,16 +49,42 @@ const CAT_TEXT: Record<string, string> = {
 export default function HomePage() {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [focusedIndex, setFocusedIndex] = useState(-1)
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const searchRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        searchRef.current?.focus()
+        searchRef.current?.select()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   const [params] = useSearchParams()
   const activeCategory = params.get('category') as Category | null
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(query), 150)
-    return () => clearTimeout(t)
-  }, [query])
+  const handleQueryChange = (value: string) => {
+    setQuery(value)
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    if (!value) {
+      setDebouncedQuery('')
+      setFocusedIndex(-1)
+      return
+    }
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedQuery(value)
+      setFocusedIndex(-1)
+    }, 150)
+  }
 
-  const isSearching = debouncedQuery.trim().length >= SEARCH_MIN_LEN
+  const isSearching = debouncedQuery.trim().split(/\s+/).some(t => t.length >= SEARCH_MIN_LEN)
   const searchGroups = isSearching ? buildSearchGroups(debouncedQuery) : []
 
   const visible = activeCategory
@@ -67,6 +94,33 @@ export default function HomePage() {
   const flatResults = searchGroups.flatMap(g =>
     g.charts.map(c => ({ useCaseTitle: g.title, chart: c }))
   )
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isSearching || flatResults.length === 0) {
+      if (e.key === 'Escape') handleQueryChange('')
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      const next = Math.min(focusedIndex + 1, flatResults.length - 1)
+      setFocusedIndex(next)
+      rowRefs.current[next]?.scrollIntoView({ block: 'nearest' })
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      const next = Math.max(focusedIndex - 1, -1)
+      setFocusedIndex(next)
+      if (next >= 0) rowRefs.current[next]?.scrollIntoView({ block: 'nearest' })
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (focusedIndex >= 0 && flatResults[focusedIndex]) {
+        navigate(`/charts/${flatResults[focusedIndex].chart.id}`)
+        handleQueryChange('')
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      handleQueryChange('')
+    }
+  }
 
   return (
     <div>
@@ -127,7 +181,7 @@ export default function HomePage() {
 
         {/* Search bar — always in this fixed position */}
         <div className="mb-8">
-          <SearchInput value={query} onChange={setQuery} />
+          <SearchInput ref={searchRef} value={query} onChange={handleQueryChange} onKeyDown={handleKeyDown} />
         </div>
 
         {/* Heading + filter row */}
@@ -157,9 +211,10 @@ export default function HomePage() {
                   <div key={`${chart.id}-${useCaseTitle}`}>
                     {showDivider && <hr className="border-[var(--color-border)]" />}
                     <button
+                      ref={(el) => { rowRefs.current[i] = el }}
                       type="button"
-                      onClick={() => navigate(`/charts/${chart.id}`)}
-                      className="group flex w-full items-center gap-3 pl-0 pr-5 py-3.5 text-left hover:bg-[var(--color-accent-wash)] transition-colors animate-fade-up"
+                      onClick={() => { navigate(`/charts/${chart.id}`); handleQueryChange('') }}
+                      className={`group flex w-full items-center gap-3 pr-5 py-3.5 text-left transition-colors animate-fade-up ${focusedIndex === i ? 'bg-[var(--color-accent-wash)]' : 'hover:bg-[var(--color-accent-wash)]'}`}
                       style={{
                         animationDelay: `${i * 25}ms`,
                         borderLeft: `3px solid ${CAT_COLOR[chart.category] ?? 'var(--color-border)'}`,
@@ -184,7 +239,7 @@ export default function HomePage() {
                         {CATEGORIES[chart.category as keyof typeof CATEGORIES]?.label ?? chart.category}
                       </span>
                       {/* Arrow */}
-                      <span className="shrink-0 text-[var(--color-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-sm">→</span>
+                      <span className={`shrink-0 text-[var(--color-muted)] transition-opacity text-sm ${focusedIndex === i ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>→</span>
                     </button>
                   </div>
                 )
