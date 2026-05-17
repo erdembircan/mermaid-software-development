@@ -113,7 +113,7 @@ export default function HomePage() {
     } else if (e.key === 'Enter') {
       e.preventDefault()
       if (focusedIndex >= 0 && flatResults[focusedIndex]) {
-        navigate(`/charts/${flatResults[focusedIndex].chart.id}`)
+        navigate(`/charts/${flatResults[focusedIndex].chart.id}`, { state: { highlight: debouncedQuery } })
         handleQueryChange('')
       }
     } else if (e.key === 'Escape') {
@@ -213,7 +213,7 @@ export default function HomePage() {
                     <button
                       ref={(el) => { rowRefs.current[i] = el }}
                       type="button"
-                      onClick={() => { navigate(`/charts/${chart.id}`); handleQueryChange('') }}
+                      onClick={() => { navigate(`/charts/${chart.id}`, { state: { highlight: debouncedQuery } }); handleQueryChange('') }}
                       className={`group flex w-full items-center gap-3 pr-5 py-3.5 text-left transition-colors animate-fade-up ${focusedIndex === i ? 'bg-[var(--color-accent-wash)]' : 'hover:bg-[var(--color-accent-wash)]'}`}
                       style={{
                         animationDelay: `${i * 25}ms`,

@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useLocation } from 'react-router-dom'
 import { getChartById, getAdjacentCharts } from '../data/charts'
 import { CATEGORIES } from '../lib/categories'
 import DiagramViewer from '../components/DiagramViewer'
@@ -16,6 +16,8 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
 
 export default function ChartDetailPage() {
   const { chartId } = useParams<{ chartId: string }>()
+  const { state } = useLocation()
+  const highlight: string = (state as { highlight?: string } | null)?.highlight ?? ''
   const chart = chartId ? getChartById(chartId) : undefined
   const { prev, next } = chartId ? getAdjacentCharts(chartId) : { prev: null, next: null }
 
@@ -108,7 +110,7 @@ export default function ChartDetailPage() {
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {chart.useCases.map((uc, i) => (
-            <UseCaseCard key={uc.slug} useCase={uc} index={i} />
+            <UseCaseCard key={uc.slug} useCase={uc} index={i} highlight={highlight} />
           ))}
         </div>
       </section>
