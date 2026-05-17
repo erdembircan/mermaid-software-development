@@ -33,17 +33,20 @@ export default function Footer() {
             </a>
           </div>
         </div>
-        <div className="mt-8 border-t border-[var(--color-border)] pt-6 text-xs text-[var(--color-muted)]">
-          All diagrams rendered with{' '}
-          <a
-            href="https://mermaid.js.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-[var(--color-accent)]"
-          >
-            Mermaid.js
-          </a>
-          {' '}— open source, MIT licensed.
+        <div className="mt-8 border-t border-[var(--color-border)] pt-6 flex items-center justify-between text-xs text-[var(--color-muted)]">
+          <span>
+            All diagrams rendered with{' '}
+            <a
+              href="https://mermaid.js.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-[var(--color-accent)]"
+            >
+              Mermaid.js
+            </a>
+            {' '}— open source, MIT licensed.
+          </span>
+          <span>Built by Erdem Bircan</span>
         </div>
       </div>
     </footer>
