@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import type { ChartEntry } from '../data/types'
 import { CATEGORIES } from '../lib/categories'
@@ -16,7 +17,7 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string }> = {
   planning: { bg: 'var(--color-cat-planning)', text: 'var(--color-cat-planning-text)' },
 }
 
-export default function ChartCard({ chart, index }: Props) {
+export default memo(function ChartCard({ chart, index }: Props) {
   const catStyle = CATEGORY_STYLE[chart.category]
   const catLabel = CATEGORIES[chart.category].label
 
@@ -69,4 +70,4 @@ export default function ChartCard({ chart, index }: Props) {
       </div>
     </Link>
   )
-}
+})
