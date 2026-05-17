@@ -9,6 +9,9 @@ yarn.lock
 dist/
 dist-ssr/
 
+# Local pnpm store (should use global store at ~/Library/pnpm/store)
+.pnpm-store/
+
 # Vite / TypeScript caches
 *.local
 *.tsbuildinfo
